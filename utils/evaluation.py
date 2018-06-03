@@ -23,7 +23,7 @@ class evaluation_class():
     
     
     '''
-    def __init__(self ,number_of_characters=None,Y_test=None, y_pred = None, X_test = None , model = None, pipelinedate = None, modeltime =None, weighting = None, balance = None):
+    def __init__(self ,number_of_characters = None,Y_test = None, y_pred = None, X_test = None , model = None, pipelinedate = None, modeltime = None, weighting = None, balance = None):
         
        
         if isinstance(X_test, str):
@@ -51,36 +51,31 @@ class evaluation_class():
         self.lb = LabelBinarizer()
         self.lb = self.lb.fit([1,2,3,4,5,6,7,8,9])
             
-        if not (model is  None and y_pred is None): #changed from "if y_pred and model is not None"
+        if not (model is  None and y_pred is None):
             if y_pred is not None: 
-                
                 self.Y_pred = y_pred
             else:
                 try: 
-                    self.Y_pred = self.model.predict_proba(self.X_test) # added "self.Y_pred ="
+                    self.Y_pred = self.model.predict_proba(self.X_test) 
                     print(self.Y_pred)
                 except AttributeError:
                     self.Y_pred = self.model.predict(self.X_test)
                 print(self.Y_pred.shape)
         
-            if self.Y_pred.ndim == 1:
-                #print('dim is 1')
+            if self.Y_pred.ndim == 1: # No probabilities
                 self.Y_pred = self.Y_pred.astype(int)
-                self.Y_pred_indicator_matrix = self.lb.transform(self.Y_pred)
-            else:
-              
+                self.Y_pred_indicator_matrix = self.lb.transform(self.Y_pred) 
+            else:  
                 self.Y_pred_indicator_matrix = self.Y_pred
                 self.Y_pred = self.lb.inverse_transform(self.Y_pred,  threshold = 0.5)
             
             if self.Y_test.ndim == 1:
-                #print('dim is 1')
-                #self.Y_test = self.Y_test.astype(int)
                 self.Y_test_indicator_matrix = self.lb.transform(self.Y_test.astype(int))
-                #self.Y_test = self.lb.inverse_transform(self.Y_test_indicator_matrix,  threshold = 0.5)
                 self.Y_test = self.Y_test.astype(int)
             else:
                 self.Y_test_indicator_matrix = self.Y_test
                 self.Y_test = self.lb.inverse_transform(self.Y_test, threshold = 0.5)
+        
         if self.model is None:
              self.model = 'modeltime = '+str(modeltime)+','+'weighting = '+str(weighting)+','+'oversampling = '+str(balance)
     
@@ -92,12 +87,12 @@ class evaluation_class():
         print('Accuracy:',self.accuracy,'Log loss:', self.logloss, 'F1 micro:', self.f1_micro,'F1 macro:' ,self.f1_macro)
         self.confusionmatrix()
         self.save_evaluation(filename = filename, filename_trainingmodel = filename_trainingmodel, params = params)
-            
+    
+    
     def predict(self):
         self.Y_pred = self.model.predict(self.X_test)
         return self.Y_pred
     
-
 
     def evaluation_values(self):
         '''
@@ -116,6 +111,7 @@ class evaluation_class():
         self.f1_macro = metrics.f1_score(self.Y_test,self.Y_pred, average='macro')
         return self.accuracy, self.logloss, self.f1_micro, self.f1_macro
 
+    
     def confusionmatrix(self, calculated_confusion_matrix = None):
         if  calculated_confusion_matrix is None: 
             self.cnf_matrix = confusion_matrix(self.Y_test,self.Y_pred.astype(int))
@@ -132,6 +128,7 @@ class evaluation_class():
         self.plot_confusion_matrix(self.cnf_matrix, classes=class_names, normalize=True,title='Normalized confusion matrix')
         plt.show()
 
+        
     def plot_confusion_matrix(self, cm, classes,
                           normalize=False,
                           title='Confusion matrix',

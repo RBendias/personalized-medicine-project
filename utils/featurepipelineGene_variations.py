@@ -8,7 +8,6 @@ from sklearn.preprocessing import Normalizer
 from sklearn.preprocessing import normalize
 from Read_data import read_data
 import sys
-#from fbpca import pca
 from scipy.sparse.linalg import svds
 sys.path.append('../')
 import ourPreprocessor
@@ -36,6 +35,9 @@ class featurepipeline:
        
             
     def gene_variation_transform(self, n_comp = 25,n_iter=20 , columns = None):
+        '''
+        Based on https://www.kaggle.com/danofer/genetic-variants-to-protein-features
+        '''
         df_joint = pd.concat([self.train_gene_variations_df,self.test_gene_variations_df,self.stage2test_gene ])
         df_joint["simple_variation_pattern"] = df_joint.Variation.str.contains(r'^[A-Z]\d{1,7}[A-Z]$',case=False)
         df_joint['location_number'] = df_joint.Variation.str.extract('(\d+)', expand=True)
@@ -171,8 +173,6 @@ class featurepipeline:
                 result[c] = str(g_members[0]) #K:V map, use group's first letter as represent.
         return result
 
-            
-
     
     def processGeneVariation(self,pipeline_date='', balance = None,   gene_n_comp = 25,gene_n_iter = 50, gene_columns= None, train = None, test = None, stage2_transf = None, pipeline = None, svd_name= None ):
         if pipeline_date!='': 
@@ -185,11 +185,7 @@ class featurepipeline:
         if svd_name is None: 
             svd_name = str('as in pipeline'+pipeline_date)
         self.merge_and_save(train, test, stage2test, pipeline, svd_name = svd_name, balance = balance, pipeline_date=pipeline_date)
-        
-
-            
-        
-            
+                
     
     
     def processText(self,chars='1000',preprocessor = ourPreprocessor.myPreprocessor , tokenizer = ourPreprocessor.tokenizeronlyletters, ngram = 1, max_features = 50000, max_df = 0.9, min_df = 0, n_iter = 50, n_comp = 300, normalizer = Normalizer(), balance = None,  gene_n_comp = 25,gene_n_iter=20 , gene_columns = None, svd = None ):
@@ -218,9 +214,7 @@ class featurepipeline:
              
         else: 
             self.merge_and_save(train, test, stage2_transf, pipeline, svd_name, balance)
-    
         
-      
     
     
     def merge_and_save(self,train, test, stage2test, pipeline, svd_name = '', balance = None, pipeline_date=''):
@@ -263,7 +257,6 @@ class featurepipeline:
             columns = self.df_joint_columns
         self.save_pipelineinfo(pipeline.named_steps, filename1, filename2, filename3, filename4, balance, columns, svd_name,pipeline_date )
         
-
 
 
     def save_pipeline(self, model=None, time=None):
