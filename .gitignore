@@ -1,0 +1,10 @@
+deliver/Archive/*
+utils/Archive/*
+utils/_pycache_/*
+utils/.vscode/*
+utils/.ipynb_checkpoints/*
+utils/.DS_Store
+deliver/.ipynb_checkpoints/*
+.DS_Store
+.ipynb_checkpoints/*
+utils/__pycache__/*
