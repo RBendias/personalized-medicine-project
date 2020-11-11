@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # +
 import numpy as np
 import math
@@ -5,9 +6,14 @@ import re
 import pandas as pd
 import os
 
+from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS as esw
 from sklearn.base import BaseEstimator, TransformerMixin
 
 data_path = "../../data/msk-redefining-cancer-treatment"
+
+grantham_distances = pd.read_csv(
+    os.path.join(data_path, "external/physiochem.csv"), sep=","
+)
 
 pc5 = {
     "I": "A",  # Aliphatic
@@ -32,8 +38,7 @@ pc5 = {
     "P": "D",
 }
 
-
-def finddistance(AA1=None, AA2=None):
+def find_distance(AA1=None, AA2=None):
     if AA1 in pc5 and AA2 in pc5 and AA1 != "W":
         AAlist = grantham_distances.loc[
             grantham_distances["FIRST"] == AA1
@@ -45,7 +50,7 @@ def finddistance(AA1=None, AA2=None):
     else:
         dist = AAlist.get(AA2)  # Search for AA2
     if math.isnan(dist):  # If not found, switch order and search again
-        dist = finddistance(AA1=AA2, AA2=AA1)
+        dist = find_distance(AA1=AA2, AA2=AA1)
     return int(dist)
 
 
@@ -56,14 +61,9 @@ def get_first_last_letter(variation):
         return np.NaN, np.NaN
 
 
-grantham_distances = pd.read_csv(
-    os.path.join(data_path, "external/physiochem.csv"), sep=","
-)
-
-
 def get_phsysiochem_distance(variation):
     first_letter, last_letter = get_first_last_letter(variation)
-    phsysiochem_distance = finddistance(first_letter, last_letter)
+    phsysiochem_distance = find_distance(first_letter, last_letter)
     return phsysiochem_distance
 
 
@@ -96,7 +96,7 @@ def get_data(text_file_path, variants_file_path, solution_file_path=None):
     return merge_df
 
 
-class Cust_regression_vals(BaseEstimator, TransformerMixin):
+class CustRegressionVals(BaseEstimator, TransformerMixin):
     def fit(self, x, y=None):
         return self
 
@@ -105,7 +105,7 @@ class Cust_regression_vals(BaseEstimator, TransformerMixin):
         return x
 
 
-class Cust_txt_col(BaseEstimator, TransformerMixin):
+class CustTxtCol(BaseEstimator, TransformerMixin):
     def __init__(self, key):
         self.key = key
 
@@ -183,3 +183,101 @@ def extract_text_sections(text, gene, variation, section_length):
             end_index = end
     section = section.replace("\t", " ")
     return section
+
+
+# +
+def custom_preprocessor(doc):
+    return (
+        doc.replace(",", " ")
+        .replace("'", " ")
+        .replace("*", " ")
+        .replace(". ", " ")
+        .replace("“", " ")
+        .replace("”", " ")
+        .replace("%", " ")
+        .replace("(", " ")
+        .replace(")", " ")
+        .replace("[", " ")
+        .replace("]", " ")
+        .replace("\n", " ")
+    )
+
+def custom_tokenizer(doc):
+    tokens = re.findall(r"(?=[^A-z]*[A-z][^A-z]*)(?=[\D]{3,}\s)(?=\b)\S+", doc)
+    return tokens
+
+# at least one letter, might contain hyphens, preceeded by white space. Second paranthesis makes sure we have a least three digits and/or letters
+def tokenizer_at_least_three(doc):
+    tokens = re.findall(
+        r"(?=[^A-z]*[A-z][^A-z]*)(?=[A-z0-9]+-?[A-z0-9]+-?[A-z0-9]+\s)(?<=\s)\w\S+\w",
+        doc,
+    )
+    return tokens
+
+def tokenizer_no_numbers(doc):
+    tokens = re.findall(r"(?=[^A-z]*[A-z][^A-z]*)(?=[^\d\s]{3,})(?<=\s)\w\S+\w", doc)
+    return tokens
+
+def tokenizer_only_letters(doc):
+    tokens = re.findall(r"(?=[A-z]+-?[A-z]+-?[A-z]+\s)(?<=\s)\S{3,}", doc)
+    return tokens
+
+# takes at words with at least five letters
+def tokenizer_five_letters(doc):
+    tokens = re.findall(r"(?=[A-z]+-?[A-z]+-?[A-z]+\s)\S{5,}", doc)
+    return tokens
+
+
+# -
+
+stop_words = [
+    "fig",
+    "figure",
+    "et",
+    "al",
+    "table",
+    "data",
+    "analysis",
+    "analyze",
+    "study",
+    "method",
+    "result",
+    "conclusion",
+    "author",
+    "find",
+    "found",
+    "show",
+    "perform",
+    "demonstrate",
+    "evaluate",
+    "discuss",
+    "google",
+    "scholar",
+    "pubmed",
+    "web",
+    "science",
+    "crossref",
+    "supplementary",
+    "(fig.)",
+    "(figure",
+    "fig.",
+    "al.",
+    "did",
+    "thus,",
+    "...",
+    "interestingly,",
+    "and/or",
+    "author",
+] + list(esw)
+
+stop_words_extended = [
+    "variants",
+    "variant",
+    "mutation",
+    "mutants",
+    "patients",
+    "cells",
+    "results",
+    "mutant",
+    "mutations",
+] + list(stop_words)

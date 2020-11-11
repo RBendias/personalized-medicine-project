@@ -54,7 +54,7 @@ class Evaluation:
 
     def calculate_evaluation_values(self):
         """
-        the function returns the main evaluation values: accuracy, logloss,f1_micro and macro
+        The function returns the main evaluation values: accuracy, logloss,f1_micro and macro
         Y_pred: 1d array-like, or label indicator array / sparse matrix
         """
         self.logloss = log_loss(
